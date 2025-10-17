@@ -22,8 +22,8 @@ ELMs provide extremely fast training and inference, making them ideal for real-t
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/elm-finance-reproduction.git
-cd elm-finance-reproduction
+git clone https://github.com/yourusername/quantfinance-elm-paper-reproduction.git
+cd quantfinance-elm-paper-reproduction
 
 # Create environment
 python -m venv venv
@@ -66,7 +66,7 @@ elm_prices, analytical_prices = elm_pricer.compare_with_analytical(
 ## Project Structure
 
 ```
-elm-finance-reproduction-study/
+quantfinance-elm-paper-reproduction/
 ├── data/                            # Training datasets and cached data
 ├── docs/                            # Project documentation and images
 ├── references/                      # Research papers and literature
