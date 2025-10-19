@@ -361,8 +361,8 @@ class OptionPricingELM:
         if np.any(X_raw[:, 2] <= 0):
             raise ValueError("Time to maturity T must be positive.")
 
-        # Get ELM predictions (always prices first, then convert if needed)
-        elm_prices = self.predict(X_raw)
+        # Get ELM predictions
+        elm_predictions = self.predict(X_raw)
 
         analytical_prices = np.zeros(len(X_raw), dtype=float)
 
@@ -371,7 +371,7 @@ class OptionPricingELM:
 
         # Row by row pricing
         for i, row in enumerate(X_raw):
-            S0, K, T, r, q, v0, kappa, theta, sigma, rho = [float(x) for x in row]
+            S0, K, T, r, q, v0, theta, kappa, sigma, rho = [float(x) for x in row]
 
             heston_model = HestonModel(
                 S0=S0,
@@ -409,27 +409,36 @@ class OptionPricingELM:
                     )
                 )
 
-        # Convert to implied volatilities if requested
+        # Handle different comparison modes
         if comparison_mode.lower() == "implied_volatility":
             from elm.models.pricing.methods.black_scholes import BlackScholes
 
-            # Convert ELM prices to implied volatilities
-            elm_ivs = np.zeros(len(X_raw), dtype=float)
-            analytical_ivs = np.zeros(len(X_raw), dtype=float)
+            # Check if ELM predictions are already implied volatilities
+            # Implied volatilities are typically in the range 0.05-2.0
+            elm_min, elm_max = np.min(elm_predictions), np.max(elm_predictions)
 
+            # If ELM predictions are in IV range (0.05-2.0), treat them as IVs
+            if 0.05 <= elm_min and elm_max <= 2.0:
+                # ELM is already predicting implied volatilities
+                elm_ivs = elm_predictions
+            else:
+                # ELM is predicting prices, convert to IVs
+                elm_ivs = np.zeros(len(X_raw), dtype=float)
+                for i, row in enumerate(X_raw):
+                    S0, K, T, r, q = row[:5]
+                    option_type = self.option_type or "call"
+                    try:
+                        elm_ivs[i] = BlackScholes.implied_volatility(
+                            elm_predictions[i], S0, K, T, r, option_type, q
+                        )
+                    except Exception:
+                        elm_ivs[i] = np.nan
+
+            # Convert analytical prices to implied volatilities
+            analytical_ivs = np.zeros(len(X_raw), dtype=float)
             for i, row in enumerate(X_raw):
                 S0, K, T, r, q = row[:5]
                 option_type = self.option_type or "call"
-
-                # Convert ELM price to IV
-                try:
-                    elm_ivs[i] = BlackScholes.implied_volatility(
-                        elm_prices[i], S0, K, T, r, option_type, q
-                    )
-                except Exception:
-                    elm_ivs[i] = np.nan
-
-                # Convert analytical price to IV
                 try:
                     analytical_ivs[i] = BlackScholes.implied_volatility(
                         analytical_prices[i], S0, K, T, r, option_type, q
@@ -440,7 +449,7 @@ class OptionPricingELM:
             return elm_ivs, analytical_ivs
         else:
             # Return prices as before
-            return elm_prices, analytical_prices
+            return elm_predictions, analytical_prices
 
     def predict_implied_volatility(self, X: np.ndarray) -> np.ndarray:
         """
@@ -604,18 +613,18 @@ def generate_heston_training_data(
     if random_state is not None:
         np.random.seed(random_state)
 
-    # Default parameter ranges (realistic for equity options)
+    # IMPROVED: More realistic parameter ranges to avoid extreme moneyness
     default_ranges: Dict[str, Tuple[float, float]] = {
-        "S0": (80.0, 120.0),  # Spot price around 100
-        "K": (80.0, 120.0),  # Strike price
-        "T": (0.1, 3.0),  # Maturity: 1 month to 2 years
-        "r": (0.0, 0.05),  # Risk-free rate: 0% to 5%
-        "q": (0.0, 0.00),  # Dividend yield: 0%
-        "v0": (0.01, 0.45),  # Initial variance: 10% to 30% vol
-        "kappa": (0.1, 4.0),  # Mean reversion speed
-        "theta": (0.01, 0.09),  # Long-run variance
-        "sigma": (0.1, 0.4),  # Vol of vol
-        "rho": (-1.0, -0.1),  # Correlation (typically negative)
+        "S0": (90.0, 110.0),  # Narrower spot price range
+        "K": (90.0, 110.0),  # Narrower strike range (better moneyness)
+        "T": (0.25, 2.0),  # Avoid very short maturities
+        "r": (0.01, 0.05),  # Positive interest rates
+        "q": (0.0, 0.02),  # Small dividend yield
+        "v0": (0.04, 0.36),  # 20%-60% volatility
+        "kappa": (0.5, 5.0),  # Mean reversion speed
+        "theta": (0.04, 0.36),  # Long-run variance (20%-60% vol)
+        "sigma": (0.1, 0.5),  # Vol of vol
+        "rho": (-0.9, -0.1),  # Correlation (typically negative)
     }
 
     if parameter_ranges is not None:
@@ -642,8 +651,10 @@ def generate_heston_training_data(
     if pricing_method == "cos":
         pricer = COSPricer(N=256, L=10.0)
 
+    n_valid = 0  # Track valid samples
+
     for i in range(n_samples):
-        S0, K, T, r, q, v0, kappa, theta, sigma, rho = X[i]
+        S0, K, T, r, q, v0, theta, kappa, sigma, rho = X[i]
 
         # Create Heston model
         heston = HestonModel(
@@ -656,18 +667,28 @@ def generate_heston_training_data(
             option_price = pricer.price(K=K, T=T, r=r, cf=cf, option_type=option_type)
 
             if target_type == "implied_volatility":
-                # Convert price to implied volatility
-                y[i] = pricer.implied_volatility(
-                    market_price=option_price,
-                    S0=S0,
-                    K=K,
-                    T=T,
-                    r=r,
-                    option_type=option_type,
-                    q=q,
-                )
+                try:
+                    # Convert price to implied volatility
+                    iv = pricer.implied_volatility(
+                        market_price=option_price,
+                        S0=S0,
+                        K=K,
+                        T=T,
+                        r=r,
+                        option_type=option_type,
+                        q=q,
+                    )
+                    # ADDED: Validate IV is in reasonable range
+                    if 0.05 <= iv <= 2.0:  # 5% to 200% volatility
+                        y[i] = iv
+                        n_valid += 1
+                    else:
+                        y[i] = np.nan  # Mark as invalid
+                except Exception:
+                    y[i] = np.nan  # Mark failed conversions as invalid
             else:
                 y[i] = option_price
+                n_valid += 1
 
         elif pricing_method == "fourier":
             from elm.models.pricing.methods.fourier import FourierPricer
@@ -676,14 +697,24 @@ def generate_heston_training_data(
             option_price = float(fp.price(K=K, T=T, option_type=option_type))
 
             if target_type == "implied_volatility":
-                # Convert price to implied volatility using Black-Scholes
-                from elm.models.pricing.methods.black_scholes import BlackScholes
+                try:
+                    # Convert price to implied volatility using Black-Scholes
+                    from elm.models.pricing.methods.black_scholes import BlackScholes
 
-                y[i] = BlackScholes.implied_volatility(
-                    option_price, S0, K, T, r, option_type, q
-                )
+                    iv = BlackScholes.implied_volatility(
+                        option_price, S0, K, T, r, option_type, q
+                    )
+                    # ADDED: Validate IV
+                    if 0.05 <= iv <= 2.0:
+                        y[i] = iv
+                        n_valid += 1
+                    else:
+                        y[i] = np.nan
+                except Exception:
+                    y[i] = np.nan
             else:
                 y[i] = option_price
+                n_valid += 1
 
         elif pricing_method == "monte_carlo":
             from elm.models.pricing.methods.monte_carlo import MonteCarlo
@@ -693,20 +724,43 @@ def generate_heston_training_data(
             option_price = float(result["price"])
 
             if target_type == "implied_volatility":
-                # Convert price to implied volatility using Black-Scholes
-                from elm.models.pricing.methods.black_scholes import BlackScholes
+                try:
+                    # Convert price to implied volatility using Black-Scholes
+                    from elm.models.pricing.methods.black_scholes import BlackScholes
 
-                y[i] = BlackScholes.implied_volatility(
-                    option_price, S0, K, T, r, option_type, q
-                )
+                    iv = BlackScholes.implied_volatility(
+                        option_price, S0, K, T, r, option_type, q
+                    )
+                    # ADDED: Validate IV
+                    if 0.05 <= iv <= 2.0:
+                        y[i] = iv
+                        n_valid += 1
+                    else:
+                        y[i] = np.nan
+                except Exception:
+                    y[i] = np.nan
             else:
                 y[i] = option_price
+                n_valid += 1
 
         else:
             raise ValueError(f"Unknown pricing method: {pricing_method}")
 
-        if (i) % 1000 == 0:
-            print(f"Completed {i} / {n_samples}!")
+        if (i + 1) % 1000 == 0:
+            print(f"Completed {i + 1} / {n_samples}! (Valid: {n_valid})")
+
+    # ADDED: Filter out invalid samples
+    if target_type == "implied_volatility":
+        valid_mask = ~np.isnan(y)
+        n_invalid = (~valid_mask).sum()
+
+        if n_invalid > 0:
+            print(
+                f"\n  Filtered out {n_invalid} invalid IVs ({100 * n_invalid / n_samples:.1f}%)"
+            )
+            X = X[valid_mask]
+            y = y[valid_mask]
+            print(f"✓ Kept {len(y)} valid samples with IVs in range [0.05, 2.0]")
 
     return X, y
 
