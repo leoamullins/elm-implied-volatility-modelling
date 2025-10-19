@@ -7,14 +7,17 @@ seaborn>=0.11.0
 
 [all]
 quantlib
-tensorflow
+tensorflow>=2.10.0
 
 [dev]
 pytest>=7.0
-black
-flake8
-mypy
+pytest-cov>=4.0
+black>=23.0
+flake8>=6.0
+mypy>=1.0
+ipython>=8.0
+jupyter>=1.0
 
 [docs]
-mkdocs
-mkdocs-material
+mkdocs>=1.4
+mkdocs-material>=9.0

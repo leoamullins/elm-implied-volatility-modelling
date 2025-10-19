@@ -1,9 +1,7 @@
 from typing import Union, Literal, Optional, Tuple
 import numpy as np
 import pandas as pd
-
 from pathlib import Path
-
 from elm.models.pricing.elm_pricer import generate_heston_training_data
 
 
@@ -12,6 +10,9 @@ def load_training_data(
     n_samples: int = 10000,
     option_type: Literal["call", "put"] = "call",
     pricing_method: Literal["cos", "fourier", "monte_carlo"] = "cos",
+    target_type: Literal[
+        "price", "implied_volatility"
+    ] = "implied_volatility",  # ← ADD THIS
     random_state: Optional[int] = None,
     parameter_ranges: Optional[dict] = None,
     force_recompute: bool = False,
@@ -29,6 +30,8 @@ def load_training_data(
         'call' or 'put'
     pricing_method : str
         Method to compute ground truth: 'cos', 'fourier', 'monte_carlo'
+    target_type : str
+        'price' for option prices or 'implied_volatility' for IVs
     random_state : int, optional
         Random seed for reproducibility
     parameter_ranges : dict, optional
@@ -41,7 +44,7 @@ def load_training_data(
     X : np.ndarray, shape (n_samples, 10)
         Feature matrix
     y : np.ndarray, shape (n_samples,)
-        Target option prices
+        Target option prices or implied volatilities
     """
 
     # In-memory only path
@@ -51,6 +54,7 @@ def load_training_data(
             n_samples=n_samples,
             option_type=option_type,
             pricing_method=pricing_method,
+            target_type=target_type,  # ← ADD THIS
             random_state=random_state,
             parameter_ranges=parameter_ranges,
         )
@@ -65,6 +69,7 @@ def load_training_data(
         f"n{n_samples}",
         f"{option_type}",
         f"{pricing_method}",
+        f"{target_type}",  # ← ADD THIS to filename
     ]
     if random_state is not None:
         filename_parts.append(f"seed{random_state}")
@@ -87,6 +92,7 @@ def load_training_data(
         n_samples=n_samples,
         option_type=option_type,
         pricing_method=pricing_method,
+        target_type=target_type,  # ← ADD THIS
         random_state=random_state,
         parameter_ranges=parameter_ranges,
     )
