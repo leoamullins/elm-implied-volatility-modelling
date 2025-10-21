@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import time
+import os
 import numpy as np
 from typing import Dict, Tuple, Optional, Literal
+
 
 # prefer sklearn standard scaler
 try:
@@ -105,6 +107,9 @@ class OptionPricingELM:
             scale=self.scale,
             normalised_init=self.normalised_init,
         )
+        self.output_weights = self.elm.output_weights
+        self.input_weights = self.elm.input_weights
+        self.biases = self.elm.biases
 
         # PREPROCESSING
         self.feature_scaler = _SkStandardScaler() if self.normalise_features else None
@@ -265,6 +270,9 @@ class OptionPricingELM:
         )
         self._last_training_time = time.perf_counter() - start
         self.is_fitted = True
+        self.output_weights = self.elm.output_weights
+        self.input_weights = self.elm.input_weights
+        self.biases = self.elm.biases
         return self
 
     def predict(self, X: np.ndarray) -> np.ndarray:

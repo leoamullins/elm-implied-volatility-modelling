@@ -16,6 +16,28 @@ This project applies Extreme Learning Machines to European options pricing under
 
 ELMs provide extremely fast training and inference, making them ideal for real-time options pricing applications.
 
+## Project Overview
+
+![ELM Options Pricing Framework](docs/images/Figure_1.png)
+
+*Figure 1: ELM-based options pricing framework showing the integration of Extreme Learning Machines with the Heston stochastic volatility model for fast and accurate European options pricing.*
+
+## Real Options Data Validation
+
+The ELM model has been validated on real options market data, demonstrating robust performance across different market conditions:
+
+![ELM Real Options Results](elm_option_pricing_results.png)
+
+*Figure 2: Comprehensive evaluation of ELM performance on real options data showing actual vs predicted values, residual analysis, uncertainty quantification, and statistical validation.*
+
+**Key Results:**
+- **High Accuracy**: Strong correlation between predicted and actual implied volatilities
+- **Robust Performance**: Consistent results across different option types and maturities
+- **Uncertainty Quantification**: Ensemble approach provides reliable confidence intervals
+- **Fast Inference**: Real-time pricing capability for live trading applications
+
+The validation uses a diverse ensemble of ELM models (1K-25K hidden neurons) trained on real options data with comprehensive feature engineering and uncertainty quantification.
+
 ## Quick Start
 
 ### Installation
@@ -324,4 +346,4 @@ Where:
 
 **Status:** Active Development  
 **Focus:** European Options Pricing under Heston Model  
-**Last Updated:** January 2025
+**Last Updated:** October 2025
