@@ -1,0 +1,31 @@
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# IDE settings
+.vscode/
+.idea/
+
+# Model files (typically too large for git)
+*.pkl
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# Python distribution / packaging
+dist/
+build/
+*.egg-info/

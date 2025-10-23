@@ -11,6 +11,7 @@ def load_training_data(
     cache_dir: Optional[str | Path] = None,
     n_samples: int = 10000,
     option_type: Literal["call", "put"] = "call",
+    target_type: Literal["price", "implied_volatility"] = "implied_volatility",
     pricing_method: Literal["cos", "fourier", "monte_carlo"] = "cos",
     random_state: Optional[int] = None,
     parameter_ranges: Optional[dict] = None,
@@ -29,6 +30,8 @@ def load_training_data(
         'call' or 'put'
     pricing_method : str
         Method to compute ground truth: 'cos', 'fourier', 'monte_carlo'
+    target_type : str
+        'price' or 'implied_volatility'
     random_state : int, optional
         Random seed for reproducibility
     parameter_ranges : dict, optional
@@ -51,6 +54,7 @@ def load_training_data(
             n_samples=n_samples,
             option_type=option_type,
             pricing_method=pricing_method,
+            target_type=target_type,
             random_state=random_state,
             parameter_ranges=parameter_ranges,
         )
@@ -65,6 +69,7 @@ def load_training_data(
         f"n{n_samples}",
         f"{option_type}",
         f"{pricing_method}",
+        f"{target_type}",
     ]
     if random_state is not None:
         filename_parts.append(f"seed{random_state}")
@@ -89,6 +94,7 @@ def load_training_data(
         pricing_method=pricing_method,
         random_state=random_state,
         parameter_ranges=parameter_ranges,
+        target_type=target_type,
     )
 
     # Save to cache

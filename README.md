@@ -38,6 +38,22 @@ The ELM model has been validated on real options market data, demonstrating robu
 
 The validation uses a diverse ensemble of ELM models (1K-25K hidden neurons) trained on real options data with comprehensive feature engineering and uncertainty quantification.
 
+## Implied Volatility Surface Modeling
+
+The ELM model can efficiently learn and predict implied volatility surfaces under the Heston stochastic volatility model:
+
+![ELM Implied Volatility Surface](elm_iv_surface.pdf)
+
+*Figure 3: ELM-predicted implied volatility surface showing the characteristic volatility smile across different strikes and maturities. The model was trained on 10,000 synthetic Heston model options and demonstrates smooth, realistic surface behavior.*
+
+**Surface Characteristics:**
+- **Smooth topology**: ELM captures the characteristic volatility smile and term structure
+- **Fast generation**: Complete surface (2,500 points) generated in seconds
+- **Heston dynamics**: Properly reflects stochastic volatility effects (vol-of-vol, mean reversion, correlation)
+- **High accuracy**: RMSE < 0.001 for implied volatility predictions
+
+The surface can be generated using [surfacemodelling.py](src/elm/visualisation/surfacemodelling.py), which trains an ELM on Heston model data and visualizes the resulting implied volatility surface.
+
 ## Quick Start
 
 ### Installation
@@ -282,6 +298,80 @@ print(f"Correlation with COS method: {correlation:.4f}")
 - seaborn >= 0.11.0 (for enhanced plotting)
 
 See `requirements.txt` for complete list.
+
+## OptionPricingELM Parameters
+
+The `OptionPricingELM` class provides extensive configuration options for optimal performance:
+
+### Core ELM Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `n_hidden` | int | 200 | Number of hidden neurons (typically 1000-5000 for options) |
+| `activation` | str | "tanh" | Activation function: "tanh", "sine", "relu", "sigmoid" |
+| `random_state` | int | None | Random seed for reproducibility |
+| `scale` | float | 1.0 | Weight initialization scale factor |
+| `normalised_init` | bool | False | Use variance-aware weight initialization |
+
+### Regularization Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `regularisation` | bool | True | Enable Ridge regularization |
+| `regularisation_param` | float | 1e-3 | Regularization strength (higher = smoother) |
+
+### Feature Preprocessing
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `normalise_features` | bool | True | Standardize input features (recommended) |
+| `forward_normalise` | bool | True | Use forward price normalization |
+| `normalise_target` | bool | False | Standardize target prices (usually not needed) |
+
+### Target Transformations
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `target_transform` | str | None | Price normalization: "none", "by_strike", "by_spot", "by_forward" |
+| `clip_negative` | bool | True | Ensure non-negative option prices |
+
+### Recommended Configurations
+
+**High Accuracy (Production):**
+```python
+OptionPricingELM(
+    n_hidden=3000,
+    activation="sine",
+    scale=0.5,
+    regularisation_param=1e-3,
+    normalise_features=True,
+    forward_normalise=True,
+    target_transform="none"
+)
+```
+
+**Fast Training (Development):**
+```python
+OptionPricingELM(
+    n_hidden=1000,
+    activation="tanh",
+    scale=1.0,
+    regularisation_param=1e-2,
+    normalise_features=True
+)
+```
+
+**Smooth Surfaces (Volatility Modeling):**
+```python
+OptionPricingELM(
+    n_hidden=5000,
+    activation="sine",
+    scale=0.3,
+    regularisation_param=5e-3,
+    normalise_features=True,
+    forward_normalise=True
+)
+```
 
 ## ELM Algorithm
 

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import time
-import os
 import numpy as np
 from typing import Dict, Tuple, Optional, Literal
 
@@ -71,6 +70,32 @@ FEATURE_NAMES = [
 
 
 class OptionPricingELM:
+    """
+    ELM for European Options Pricing under Heston Model.
+
+    Fast neural network for option pricing using Extreme Learning Machines.
+    Features: [S0, K, T, r, q, v0, theta, kappa, sigma, rho]
+
+    Parameters
+    ----------
+    n_hidden : int, default=200
+        Number of hidden neurons (typically 1000-5000)
+    activation : str, default="tanh"
+        Activation function: "tanh", "sine", "relu", "sigmoid"
+    random_state : int, optional
+        Random seed for reproducibility
+    scale : float, default=1.0
+        Weight initialization scale (0.1-0.5 for sine, 1.0-2.0 for tanh)
+    regularisation_param : float, default=1e-3
+        Regularization strength (higher = smoother)
+    normalise_features : bool, default=True
+        Standardize input features (recommended)
+    forward_normalise : bool, default=True
+        Use forward price normalization (recommended)
+    clip_negative : bool, default=True
+        Clip negative predictions to zero
+    """
+
     def __init__(
         self,
         n_hidden: int = 200,
@@ -124,6 +149,19 @@ class OptionPricingELM:
         self._target_transform_mode = self.target_transform
 
     def _validate_features(self, X: np.ndarray) -> np.ndarray:
+        """
+        Validate and reshape input features.
+
+        Parameters
+        ----------
+        X : array-like
+            Input features
+
+        Returns
+        -------
+        array
+            Validated and reshaped features
+        """
         X = np.asarray(X, dtype=float)
         if X.ndim == 1:
             X = X.reshape(1, -1)
@@ -145,6 +183,21 @@ class OptionPricingELM:
     def _apply_target_transform_for_fit(
         self, X: np.ndarray, y: np.ndarray
     ) -> np.ndarray:
+        """
+        Apply target transformation during training.
+
+        Parameters
+        ----------
+        X : array-like
+            Input features
+        y : array-like
+            Target values
+
+        Returns
+        -------
+        array
+            Transformed target values
+        """
         mode = (self.target_transform or "none").lower()
         self._target_transform_mode = mode
 
@@ -172,6 +225,21 @@ class OptionPricingELM:
         return y / denom
 
     def _invert_target_transform(self, X: np.ndarray, y_pred: np.ndarray) -> np.ndarray:
+        """
+        Invert target transformation during prediction.
+
+        Parameters
+        ----------
+        X : array-like
+            Input features
+        y_pred : array-like
+            Predicted values
+
+        Returns
+        -------
+        array
+            Inverse transformed predictions
+        """
         mode = (self._target_transform_mode or "none").lower()
 
         if mode == "none":
@@ -227,6 +295,23 @@ class OptionPricingELM:
         y: np.ndarray,
         option_type: Literal["call", "put"] = "call",
     ) -> OptionPricingELM:
+        """
+        Train the ELM model.
+
+        Parameters
+        ----------
+        X : array-like, shape (n_samples, 10)
+            Training features [S0, K, T, r, q, v0, theta, kappa, sigma, rho]
+        y : array-like, shape (n_samples,)
+            Target option prices or implied volatilities
+        option_type : {"call", "put"}, default="call"
+            Type of options
+
+        Returns
+        -------
+        self : OptionPricingELM
+            Returns self for method chaining
+        """
         # Always work with raw inputs for y-transform
         X_raw = np.asarray(X, dtype=float)
         y = np.asarray(y, dtype=float).reshape(-1, 1)
@@ -276,6 +361,19 @@ class OptionPricingELM:
         return self
 
     def predict(self, X: np.ndarray) -> np.ndarray:
+        """
+        Predict option prices or implied volatilities.
+
+        Parameters
+        ----------
+        X : array-like, shape (n_samples, 10)
+            Input features [S0, K, T, r, q, v0, theta, kappa, sigma, rho]
+
+        Returns
+        -------
+        predictions : array, shape (n_samples,)
+            Predicted option prices or implied volatilities
+        """
         if not self.is_fitted:
             raise RuntimeError("The model must be fitted before making predictions.")
 
@@ -309,6 +407,23 @@ class OptionPricingELM:
         y_true: np.ndarray,
         metrics: Tuple[str, ...] = ("rmse", "mae", "mape"),
     ) -> Dict[str, float]:
+        """
+        Evaluate model performance.
+
+        Parameters
+        ----------
+        X : array-like, shape (n_samples, 10)
+            Test features
+        y_true : array-like, shape (n_samples,)
+            True target values
+        metrics : tuple of str, default=("rmse", "mae", "mape")
+            Available: "rmse", "mae", "mape", "r2", "correlation"
+
+        Returns
+        -------
+        results : dict
+            Dictionary containing computed metrics
+        """
         y_pred = self.predict(X)
         y_true = np.asarray(y_true, dtype=float).flatten()
 
@@ -348,6 +463,29 @@ class OptionPricingELM:
         N: int = 256,
         L: int = 10,
     ) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Compare ELM predictions with analytical Heston prices.
+
+        Parameters
+        ----------
+        X : array-like, shape (n_samples, 10)
+            Input features [S0, K, T, r, q, v0, theta, kappa, sigma, rho]
+        method : {"cos", "monte_carlo", "fourier"}, default="cos"
+            Analytical method for comparison
+        comparison_mode : {"price", "implied_volatility"}, default="price"
+            Whether to compare prices or implied volatilities
+        N : int, default=256
+            Number of COS terms (for COS method)
+        L : int, default=10
+            Integration limit (for COS method)
+
+        Returns
+        -------
+        elm_predictions : array
+            ELM predictions
+        analytical : array
+            Analytical Heston prices
+        """
         if self.is_fitted is False:
             raise ValueError("The model must be fitted before comparison.")
 
@@ -489,7 +627,7 @@ class OptionPricingELM:
                 ivs[i] = BlackScholes.implied_volatility(
                     elm_prices[i], S0, K, T, r, option_type, q
                 )
-            except:
+            except Exception:
                 ivs[i] = np.nan
 
         return ivs
@@ -524,23 +662,67 @@ class OptionPricingELM:
         return BlackScholes.price(S0, K, T, r, iv, option_type, q)
 
     def get_training_time(self) -> float:
+        """
+        Get the time taken for the last training.
+
+        Returns
+        -------
+        float
+            Training time in seconds
+        """
         if self._last_training_time is None:
             raise ValueError("The model has not been trained yet.")
         return float(self._last_training_time)
 
     def save_model(self, filepath: str) -> None:
+        """
+        Save the trained model to disk.
+
+        Parameters
+        ----------
+        filepath : str
+            Path to save the model
+        """
         import joblib
 
         joblib.dump(self, filepath)
 
     @staticmethod
     def load_model(filepath: str) -> OptionPricingELM:
+        """
+        Load a trained model from disk.
+
+        Parameters
+        ----------
+        filepath : str
+            Path to the saved model
+
+        Returns
+        -------
+        OptionPricingELM
+            Loaded model
+        """
         with open(filepath, "rb") as f:
             import joblib
 
             return joblib.load(f)
 
     def get_feature_importance(self, X: np.ndarray, y: np.ndarray) -> Dict[str, float]:
+        """
+        Compute feature importance using permutation method.
+
+        Parameters
+        ----------
+        X : array-like, shape (n_samples, 10)
+            Input features
+        y : array-like, shape (n_samples,)
+            Target values
+
+        Returns
+        -------
+        dict
+            Feature importance scores
+        """
         if not self.is_fitted:
             raise RuntimeError(
                 "The model must be fitted before computing feature importance."
@@ -563,6 +745,14 @@ class OptionPricingELM:
         return importances
 
     def __repr__(self) -> str:
+        """
+        String representation of the model.
+
+        Returns
+        -------
+        str
+            Model representation with key parameters
+        """
         fitted_str = "fitted" if self.is_fitted else "not fitted"
         return (
             f"OptionPricingELM(n_hidden={self.n_hidden}, activation='{self.activation}', "
@@ -729,9 +919,26 @@ def create_train_val_test_split(
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Split data into train/validation/test sets.
+
+    Parameters
+    ----------
+    X : array-like
+        Input features
+    y : array-like
+        Target values
+    train_size : float, default=0.7
+        Proportion for training set
+    val_size : float, default=0.15
+        Proportion for validation set
+    test_size : float, default=0.15
+        Proportion for test set
+    random_state : int, optional
+        Random seed for reproducibility
+
     Returns
     -------
-    X_train, X_val, X_test, y_train, y_val, y_test
+    tuple
+        (X_train, X_val, X_test, y_train, y_val, y_test)
     """
     if not np.isclose(train_size + val_size + test_size, 1.0):
         raise ValueError("Splits must sum to 1.0")
