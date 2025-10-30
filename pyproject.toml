@@ -7,7 +7,20 @@ name = "elm-quantitative-finance"
 version = "0.1.0"
 authors = [{name = "Leo Mullins"}]
 description = "ELM reproduction study of Cheng et al. 2025"
+readme = "README.md"
 requires-python = ">=3.8"
+license = {text = "MIT"}
+keywords = ["machine-learning", "extreme-learning-machine", "quantitative-finance", "option-pricing"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
 dependencies = [
     "numpy>=1.20.0",
     "scipy>=1.7.0",
@@ -18,9 +31,23 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=7.0", "black", "flake8", "mypy"]
-docs = ["mkdocs", "mkdocs-material"]
-all = ["quantlib", "tensorflow"]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "black>=23.0",
+    "flake8>=6.0",
+    "mypy>=1.0",
+    "ipython>=8.0",
+    "jupyter>=1.0",
+]
+docs = [
+    "mkdocs>=1.4",
+    "mkdocs-material>=9.0",
+]
+all = [
+    "quantlib",
+    "tensorflow>=2.10.0",
+]
 
 [tool.setuptools]
 package-dir = {"" = "src"}
