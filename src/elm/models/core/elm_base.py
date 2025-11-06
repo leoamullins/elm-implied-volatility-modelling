@@ -44,7 +44,7 @@ class ELM:
         self.output_weights = None  # β: (n_hidden, n_outputs)
         self.n_features = None
         self.n_outputs = None
-        self.regularisataion = None
+        self.regularisation = None
         self.regularisation_param = None  # C in the paper, degree of regularisation
 
     def _activation_function(self, X):
@@ -144,7 +144,7 @@ class ELM:
 
         # Step 1: Randomly initialize input weights and biases
         # W ~ Normal(0, scale)
-        # If normalized_init is True, use variance-aware Normal init with
+        # If normalised_init is True, use variance-aware Normal init with
         # std = scale / sqrt(n_features) so Var(XW) scales well with feature dimension
         if self.normalised_init:
             std_w = self.scale / np.sqrt(max(self.n_features, 1))
@@ -152,14 +152,11 @@ class ELM:
                 loc=0.0, scale=std_w, size=(self.n_features, self.n_hidden)
             )
             # Biases can remain at the base scale to allow translation
-            self.biases = np.random.normal(
-                loc=0.0, scale=self.scale, size=(self.n_hidden,)
-            )
+            self.biases = np.random.normal(loc=0.0, scale=self.scale, size=(self.n_hidden,))
         else:
             # Uniform weights/biases in [-scale, scale]
             self.input_weights = (
-                np.random.uniform(-1.0, 1.0, (self.n_features, self.n_hidden))
-                * self.scale
+                np.random.uniform(-1.0, 1.0, (self.n_features, self.n_hidden)) * self.scale
             )
             self.biases = np.random.uniform(-1.0, 1.0, (self.n_hidden,)) * self.scale
 
@@ -169,11 +166,11 @@ class ELM:
         # Step 3: Solve for output weights using Moore-Penrose inverse
         # beta = H_pinv @ y
         if not regularisation:
-            self.regularisataion = regularisation
+            self.regularisation = regularisation
             H_pinv = np.linalg.pinv(H)
             self.output_weights = H_pinv @ y  # (n_hidden, n_outputs)
         elif regularisation:
-            self.regularisataion = regularisation
+            self.regularisation = regularisation
             self.regularisation_param = regularisation_param  # default value
 
             # Use more stable formulation based on data size

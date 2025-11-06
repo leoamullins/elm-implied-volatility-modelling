@@ -62,8 +62,8 @@ FEATURE_NAMES = [
     "r",  # Risk-free rate
     "q",  # Dividend yield
     "v0",  # Initial variance
-    "theta",  # Long-term variance
     "kappa",  # Rate of mean reversion
+    "theta",  # Long-term variance
     "sigma",  # Volatility of variance
     "rho",  # Correlation between asset and variance
 ]
@@ -284,7 +284,7 @@ class OptionPricingELM:
         rho = X[:, 9]
 
         F = S0 * np.exp((r - q) * T)
-        k = K / F  # normalized strike
+        k = K / F  # normalised strike
 
         # Return only the subset of features used in the paper
         return np.column_stack([k, T, v0, kappa, theta, sigma, rho])
