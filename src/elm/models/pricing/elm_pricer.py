@@ -180,9 +180,7 @@ class OptionPricingELM:
 
         return X
 
-    def _apply_target_transform_for_fit(
-        self, X: np.ndarray, y: np.ndarray
-    ) -> np.ndarray:
+    def _apply_target_transform_for_fit(self, X: np.ndarray, y: np.ndarray) -> np.ndarray:
         """
         Apply target transformation during training.
 
@@ -301,7 +299,7 @@ class OptionPricingELM:
         Parameters
         ----------
         X : array-like, shape (n_samples, 10)
-            Training features [S0, K, T, r, q, v0, theta, kappa, sigma, rho]
+            Training features [S0, K, T, r, q, v0, kappa, theta, sigma, rho]
         y : array-like, shape (n_samples,)
             Target option prices or implied volatilities
         option_type : {"call", "put"}, default="call"
@@ -378,11 +376,7 @@ class OptionPricingELM:
             raise RuntimeError("The model must be fitted before making predictions.")
 
         X_raw = np.asarray(X, dtype=float)
-        X_model = (
-            self._apply_forward_normalisation(X_raw)
-            if self.forward_normalise
-            else X_raw
-        )
+        X_model = self._apply_forward_normalisation(X_raw) if self.forward_normalise else X_raw
 
         if self.normalise_features and self.feature_scaler:
             X_scaled = self.feature_scaler.transform(X_model)
@@ -438,9 +432,7 @@ class OptionPricingELM:
         if "mape" in metrics:
             mask = y_true != 0
             results["mape"] = (
-                float(
-                    np.mean(np.abs((y_true[mask] - y_pred[mask]) / y_true[mask])) * 100
-                )
+                float(np.mean(np.abs((y_true[mask] - y_pred[mask]) / y_true[mask])) * 100)
                 if np.any(mask)
                 else float("nan")
             )
@@ -495,9 +487,7 @@ class OptionPricingELM:
             X_raw = X_raw.reshape(1, -1)
 
         if X_raw.shape[1] != len(self.feature_names):
-            raise ValueError(
-                f"Expected {len(self.feature_names)} features, got {X_raw.shape[1]}"
-            )
+            raise ValueError(f"Expected {len(self.feature_names)} features, got {X_raw.shape[1]}")
 
         # Basic sanity checks on raw features
         if np.any(X_raw[:, 0] <= 0):
@@ -609,9 +599,7 @@ class OptionPricingELM:
             X_raw = X_raw.reshape(1, -1)
 
         if X_raw.shape[1] != len(self.feature_names):
-            raise ValueError(
-                f"Expected {len(self.feature_names)} features, got {X_raw.shape[1]}"
-            )
+            raise ValueError(f"Expected {len(self.feature_names)} features, got {X_raw.shape[1]}")
 
         # Get ELM price predictions
         elm_prices = self.predict(X_raw)
@@ -624,9 +612,7 @@ class OptionPricingELM:
             option_type = self.option_type or "call"
 
             try:
-                ivs[i] = BlackScholes.implied_volatility(
-                    elm_prices[i], S0, K, T, r, option_type, q
-                )
+                ivs[i] = BlackScholes.implied_volatility(elm_prices[i], S0, K, T, r, option_type, q)
             except Exception:
                 ivs[i] = np.nan
 
@@ -724,9 +710,7 @@ class OptionPricingELM:
             Feature importance scores
         """
         if not self.is_fitted:
-            raise RuntimeError(
-                "The model must be fitted before computing feature importance."
-            )
+            raise RuntimeError("The model must be fitted before computing feature importance.")
 
         X = self._validate_features(X)
         y = np.asarray(y, dtype=float).flatten()
@@ -823,9 +807,7 @@ def generate_heston_training_data(
                 raise ValueError(f"Unknown parameter in parameter_ranges: {key}")
             low, high = float(rng[0]), float(rng[1])
             if low >= high:
-                raise ValueError(
-                    f"parameter_ranges['{key}'] must satisfy low < high, got {rng}"
-                )
+                raise ValueError(f"parameter_ranges['{key}'] must satisfy low < high, got {rng}")
             default_ranges[key] = (low, high)
 
     # Generate random parameters in deterministic column order
@@ -844,9 +826,7 @@ def generate_heston_training_data(
         S0, K, T, r, q, v0, kappa, theta, sigma, rho = X[i]
 
         # Create Heston model
-        heston = HestonModel(
-            S0=S0, v0=v0, kappa=kappa, theta=theta, sigma=sigma, rho=rho, r=r, q=q
-        )
+        heston = HestonModel(S0=S0, v0=v0, kappa=kappa, theta=theta, sigma=sigma, rho=rho, r=r, q=q)
 
         # Price option
         if pricing_method == "cos":
@@ -877,9 +857,7 @@ def generate_heston_training_data(
                 # Convert price to implied volatility using Black-Scholes
                 from elm.models.pricing.methods.black_scholes import BlackScholes
 
-                y[i] = BlackScholes.implied_volatility(
-                    option_price, S0, K, T, r, option_type, q
-                )
+                y[i] = BlackScholes.implied_volatility(option_price, S0, K, T, r, option_type, q)
             else:
                 y[i] = option_price
 
@@ -894,9 +872,7 @@ def generate_heston_training_data(
                 # Convert price to implied volatility using Black-Scholes
                 from elm.models.pricing.methods.black_scholes import BlackScholes
 
-                y[i] = BlackScholes.implied_volatility(
-                    option_price, S0, K, T, r, option_type, q
-                )
+                y[i] = BlackScholes.implied_volatility(option_price, S0, K, T, r, option_type, q)
             else:
                 y[i] = option_price
 

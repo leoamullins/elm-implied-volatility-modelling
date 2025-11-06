@@ -521,31 +521,6 @@ pytest --cov=elm --cov-report=term-missing tests/
 
 See `requirements.txt` for complete list.
 
-## Note on Spelling
-
-This codebase uses **British English spelling** throughout:
-- `regularisation` (not regularization)
-- `normalise` (not normalize)
-- `modelling` (not modeling)
-- `optimised` (not optimized)
-- Class name: `SurfaceRegularisedELM` (not SurfaceRegularizedELM)
-
-Backward compatibility aliases are provided where appropriate for American spellings.
-
-## Current Status
-
-- ✅ Core ELM implementation
-- ✅ I-ELM implementation
-- ✅ Heston model with characteristic function
-- ✅ COS method for analytical pricing
-- ✅ Fourier and Monte Carlo pricing methods
-- ✅ Black-Scholes implementation
-- ✅ Complete ELM pricing framework
-- ✅ Synthetic data generation
-- ✅ Comprehensive test suite
-- ✅ Implied volatility surface modelling
-- ✅ Surface-regularised ELM variants
-
 ## Citation
 
 ```bibtex
@@ -568,4 +543,4 @@ Backward compatibility aliases are provided where appropriate for American spell
 
 **Status:** Active Development
 **Focus:** European Options Pricing under Heston Model
-**Last Updated:** January 2025
+**Last Updated:** November 2025

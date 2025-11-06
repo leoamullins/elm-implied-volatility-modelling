@@ -52,7 +52,7 @@ def create_feature_matrix(df):
     q = df["underlying_symbol"].map(div_map).fillna(0.01)
 
     # Heston parameters (from synthetic data)
-    synthetic_data = pd.read_csv("data/training_data_n100000_call_cos_X.csv")
+    synthetic_data = pd.read_csv("data/training_data_n100000_call_cos_implied_volatility_X.csv")
     heston_params = {
         "v0": synthetic_data.iloc[:, 5].mean(),
         "theta": synthetic_data.iloc[:, 6].mean(),
@@ -76,15 +76,15 @@ def create_feature_matrix(df):
             r,  # Risk-free rate
             q,  # Dividend yield
             v0,  # Initial variance
-            theta,  # Long-term variance
-            kappa,  # Rate of mean reversion
+            kappa,  # Long-term variance
+            theta,  # Rate of mean reversion
             sigma,  # Volatility of variance
             rho,  # Correlation between asset and variance
         ]
     )
 
     print(f"Feature matrix shape: {X.shape}")
-    print("Features: S0, K, T, r, q, v0, theta, kappa, sigma, rho")
+    print("Features: S0, K, T, r, q, v0, kappa, theta, sigma, rho")
 
     return X
 
@@ -132,63 +132,6 @@ def train_model(X, y, test_size=0.20, random_state=42):
             "activation": "sine",
             "scale": 1.5,
             "regularisation_param": 1e-4,
-        },
-        # Large models (7K-10K)
-        {
-            "n_hidden": 7000,
-            "activation": "tanh",
-            "scale": 2.0,
-            "regularisation_param": 1e-4,
-        },
-        {
-            "n_hidden": 8000,
-            "activation": "sine",
-            "scale": 2.0,
-            "regularisation_param": 1e-4,
-        },
-        {
-            "n_hidden": 9000,
-            "activation": "tanh",
-            "scale": 2.5,
-            "regularisation_param": 1e-5,
-        },
-        {
-            "n_hidden": 10000,
-            "activation": "sine",
-            "scale": 2.5,
-            "regularisation_param": 1e-5,
-        },
-        # Ultra-large models (12K-20K)
-        {
-            "n_hidden": 12000,
-            "activation": "tanh",
-            "scale": 3.0,
-            "regularisation_param": 1e-5,
-        },
-        {
-            "n_hidden": 15000,
-            "activation": "sine",
-            "scale": 3.0,
-            "regularisation_param": 1e-5,
-        },
-        {
-            "n_hidden": 18000,
-            "activation": "tanh",
-            "scale": 3.5,
-            "regularisation_param": 1e-6,
-        },
-        {
-            "n_hidden": 20000,
-            "activation": "sine",
-            "scale": 3.5,
-            "regularisation_param": 1e-6,
-        },
-        # Maximum capacity
-        {
-            "n_hidden": 25000,
-            "activation": "tanh",
-            "scale": 4.0,
-            "regularisation_param": 1e-6,
         },
     ]
 
@@ -327,9 +270,7 @@ def plot_results(y_true, y_pred, uncertainty=None, save_path=None):
     n_points = min(200, len(y_true))
     x_axis = range(n_points)
     axes[1, 0].plot(x_axis, y_true[:n_points], label="Actual", alpha=0.8, linewidth=1)
-    axes[1, 0].plot(
-        x_axis, y_pred[:n_points], label="Predicted", alpha=0.8, linewidth=1
-    )
+    axes[1, 0].plot(x_axis, y_pred[:n_points], label="Predicted", alpha=0.8, linewidth=1)
     axes[1, 0].set_xlabel("Sample Index")
     axes[1, 0].set_ylabel("Values")
     axes[1, 0].set_title("Time Series Comparison (First 200 Points)")
@@ -407,12 +348,8 @@ if __name__ == "__main__":
     # Create proper feature matrix with only numeric features
     X = create_feature_matrix(df_clean)
     y = df_clean["trade_iv"]
-    trained_models, predictions, X_test, y_test, ensemble_pred, uncertainty = (
-        train_model(X, y)
-    )
+    trained_models, predictions, X_test, y_test, ensemble_pred, uncertainty = train_model(X, y)
     evaluate_model(y_test, ensemble_pred, uncertainty)
 
     # Create comprehensive plots
-    plot_results(
-        y_test, ensemble_pred, uncertainty, save_path="elm_option_pricing_results.png"
-    )
+    plot_results(y_test, ensemble_pred, uncertainty, save_path="elm_option_pricing_results.png")
