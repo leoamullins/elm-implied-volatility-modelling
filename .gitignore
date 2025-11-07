@@ -1,31 +1,63 @@
-# Python cache files
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
-
-# macOS system files
-.DS_Store
-.AppleDouble
-.LSOverride
-
-# Virtual environments
-venv/
+.Python
 env/
+venv/
 ENV/
-.venv
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
-# IDE settings
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb_checkpoints/
+
+# Environment variables
+.env
+.env.local
+
+# IDE
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
 
-# Model files (typically too large for git)
+# Data files (important for finance projects!)
+*.csv
+*.xlsx
+*.parquet
+data/
+datasets/
+!example_data.csv  # Keep example files with !
+
+# Model files
 *.pkl
+*.h5
+*.pt
+models/
+checkpoints/
 
-# Jupyter Notebook checkpoints
-.ipynb_checkpoints
+# OS
+.DS_Store
+Thumbs.db
 
-# Python distribution / packaging
-dist/
-build/
-*.egg-info/
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
