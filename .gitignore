@@ -60,8 +60,8 @@ ipython_config.py
 *.parquet
 *.feather
 *.hdf5
-data/
-datasets/
+/data/
+/datasets/
 !example_data.csv  # Keep example files with !
 !**/example*.csv
 !**/sample*.csv
@@ -76,11 +76,11 @@ datasets/
 *.pth
 *.onnx
 *.pb
-models/
-checkpoints/
-saved_models/
-outputs/
-results/
+/models/
+/saved_models/
+/checkpoints/
+/outputs/
+/results/
 
 # Logs
 *.log
